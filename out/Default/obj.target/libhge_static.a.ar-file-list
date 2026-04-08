@@ -1,0 +1,8 @@
+out/Default/obj.target/hge_static/src/core/graphics.o
+out/Default/obj.target/hge_static/src/core/ini.o
+out/Default/obj.target/hge_static/src/core/input.o
+out/Default/obj.target/hge_static/src/core/random.o
+out/Default/obj.target/hge_static/src/core/resource.o
+out/Default/obj.target/hge_static/src/core/sound.o
+out/Default/obj.target/hge_static/src/core/system.o
+out/Default/obj.target/hge_static/src/core/timer.o

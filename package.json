@@ -1,0 +1,12 @@
+{
+  "name": "hge-mac-port",
+  "version": "1.0.0",
+  "description": "Node.js toolchain for HGE macOS port",
+  "scripts": {
+    "lint": "python3 -m cpplint --recursive src include",
+    "format": "clang-format -i -style=file src/core/*.cpp src/core/mac/*.mm src/core/*.h include/*.h"
+  },
+  "devDependencies": {
+    "clang-format": "^1.8.0"
+  }
+}
