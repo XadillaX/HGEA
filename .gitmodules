@@ -1,0 +1,3 @@
+[submodule "references"]
+	path = references/HGE
+	url = https://github.com/masonm12/HGE
