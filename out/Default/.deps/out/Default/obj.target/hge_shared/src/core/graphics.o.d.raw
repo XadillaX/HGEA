@@ -1,0 +1,2 @@
+out/Default/obj.target/hge_shared/src/core/graphics.o: \
+ src/core/graphics.cpp src/core/../../include/hge.h src/core/hge_impl.h
