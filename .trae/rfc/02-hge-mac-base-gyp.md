@@ -7,6 +7,7 @@ HGE 引擎依赖于老旧的 Win32 API 和 DirectX 8。为实现向 macOS 平台
 
 ### 1.2 业务目标
 - 部署 `gyp-next` 作为跨平台构建工具，同时输出静态库和动态库。
+- 引入基于 Node.js 的代码质量保障工具链（`cpplint` 与 `clang-format`）。
 - 净化 `hge.h` 公开接口，剔除 `<windows.h>` 依赖，定义跨平台的基础数据类型。
 - 使用 Objective-C++ 和 macOS Cocoa API (`NSApplication`, `NSWindow`) 重写 `System_Initiate`, `System_Start`, `System_Shutdown` 等引擎生命周期方法。
 
@@ -61,6 +62,14 @@ HGE 引擎依赖于老旧的 Win32 API 和 DirectX 8。为实现向 macOS 平台
 - **优先级**: Must
 - **来源**: 用户指令（“先留空返回默认值加 TODO 或者 WIP”）
 
+### FR-005: 引入代码规范检查工具 (Node.js)
+- **描述**: 系统必须集成 `cpplint` 与 `clang-format` 以统一 C/C++ 代码风格。
+- **验收标准**:
+  - 在项目中配置 `package.json` 以通过 npm/yarn 安装 `cpplint`（通过 python 桥接或 npm 封装）与 `clang-format`。
+  - 提供 `npm run lint` 和 `npm run format` 脚本以自动检查和格式化 `src` 和 `include` 目录。
+- **优先级**: Must
+- **来源**: 用户指令（“用上 Node.js 的 cpplint 和 clang-format”）
+
 ## 4. 非功能需求
 
 ### NFR-001: API 一致性与纯净度
@@ -91,6 +100,7 @@ HGE 引擎依赖于老旧的 Win32 API 和 DirectX 8。为实现向 macOS 平台
 | ID | 需求 | 优先级 | 理由 |
 | :--- | :--- | :--- | :--- |
 | FR-001 | 跨平台双库构建 (GYP) | Must | 这是编译的核心基底 |
+| FR-005 | 引入 Node.js 规范工具 | Must | 确保早期重构阶段的代码风格可控 |
 | IF-001 | Win32 类型宏替换 | Must | 确保 `hge.h` 能够跨平台编译 |
 | FR-004 | 非本期 API 的 Stub 占位 | Must | 满足“保留所有公开 API”的要求 |
 | FR-002 | macOS 原生窗口接管 | Must | macOS 生命周期的第一步 |
@@ -138,15 +148,21 @@ graph TD
         H --> C
     end
     
-    subgraph 构建系统
+    subgraph 构建系统与工具链
         I[gyp-next] -->|解析| J(hge.gyp)
         J --> K[hge_static .a]
         J --> L[hge_shared .dylib]
+        
+        M[Node.js package.json] --> N[clang-format]
+        M --> O[cpplint]
+        N -.->|格式化| src/include
+        O -.->|风格检查| src/include
     end
 ```
 
 **关键变更**：
 - 引入 `gyp-next` 作为跨平台构建标准。
+- 引入 Node.js 的 `package.json`，使用 `clang-format` 统一代码格式，使用 `cpplint` 进行 C++ 风格静态检查。
 - `hge.h` 中的 `DWORD` 等 Win32 类型通过 `<stdint.h>` 重新定义。
 - 提取出一个全新的 `mac/system_mac.mm` 文件，专门负责处理 Cocoa 的 Objective-C++ 逻辑。
 
@@ -208,7 +224,24 @@ graph TD
   }
   ```
 
-#### 9.3.4 未实现接口的 Stub 化
+#### 9.3.4 Node.js 质量保障工具链 (`package.json`)
+- **初始化 Node.js 项目**: 在根目录运行 `npm init -y`。
+- **安装依赖**:
+  ```bash
+  npm install --save-dev clang-format cpplint
+  ```
+- **配置 scripts**:
+  ```json
+  "scripts": {
+    "lint": "cpplint --recursive src include",
+    "format": "clang-format -i -style=file src/**/*.cpp src/**/*.mm include/**/*.h"
+  }
+  ```
+- **风格配置**:
+  - 创建 `.clang-format` 配置文件（采用类似 Google 或 WebKit 风格，根据原版 HGE 习惯微调缩进和括号）。
+  - 创建 `CPPLINT.cfg` 以过滤或屏蔽由于历史原因（如 HGE 命名不完全符合现代 Google C++ Style）导致的误报警告。
+
+#### 9.3.5 未实现接口的 Stub 化
 对于第一阶段不涉及的子系统（如 Graphics, Audio, Resource, Input, Timer）：
 - 必须创建对应的 `.cpp` 源文件（如 `graphics.cpp`, `sound.cpp`）。
 - 完整实现 `hge.h` 中声明的虚函数。
@@ -226,9 +259,10 @@ graph TD
 
 ### 9.5 实施与迁移计划
 
-1. **步骤一：部署构建环境**
+1. **步骤一：部署构建与 Node.js 工具链**
    - 执行 `git clone https://github.com/nodejs/gyp-next tools/gyp`。
    - 编写 `hge.gyp` 配置文件，建立 `hge_static` 和 `hge_shared` target。
+   - 初始化 `package.json`，安装 `cpplint` 与 `clang-format`，并提供 `.clang-format` 规则文件。
 2. **步骤二：接口净化**
    - 移除 `hge.h` 和 `hge_impl.h` 中的 Win32 特有头文件。
    - 注入 `<stdint.h>` 和 `HGE_HWND` 类型。
