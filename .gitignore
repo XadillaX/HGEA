@@ -39,3 +39,10 @@
 
 # debug information files
 *.dwo
+
+# GYP generated files
+*.target.mk
+*.host.mk
+gyp-mac-tool
+out/
+build/
